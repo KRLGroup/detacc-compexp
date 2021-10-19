@@ -6,7 +6,9 @@ The repository contains the the code to replicate paper results.
 
 
 ## Description
-Given some concept-based explanations of a unit of a CNN, the Detection Accuracy is an evaluation metric that scores the explanations based on how consistently the unit detect them. This work uses Detection Accuracy to determine the appropriate 'unit-optimal' lengths of compositional explanations for the units of the CNN being probed, thus removing the need to set and tune anexplanation length hyper-parameter.
+Given some concept-based explanations of a unit of a CNN, the Detection Accuracy is an evaluation metric that scores the explanations based on how consistently the unit detect them. This work uses Detection Accuracy to determine the appropriate 'unit-optimal' lengths of compositional explanations for the units of the CNN being probed, thus removing the need to set and tune explanation length hyper-parameter.
+
+In the image below, which contains an example of how Detection Accuracy compares to Intersection over Union (IoU) in evaluating increasing length compositional explanations, the IoU simply increases as the explanation length increases while the Detection Accuracy scores better reflect what the unit detects:
 
 ![alt text](images/detacc_eval.png "Detection Accuracy Evaluation")
 
@@ -78,7 +80,7 @@ This repo extends the implementation of compositional explanations (vision exper
 
 ## Citation
 Please cite our paper as:
-"""tex
+```tex
 @article{Makinwa2021,
   title={Detection Accuracy for Evaluating Compositional Explanations of Units},
   author={Sayo M. Makinwa and Biagio La Rosa and Roberto Capobianco},
@@ -86,6 +88,4 @@ Please cite our paper as:
   year={2021},
   volume={abs/2109.07804}
 }
-"""
-
-
+```
