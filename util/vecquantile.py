@@ -1,3 +1,7 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/util/vecquantile.py
+"""
+
 import numpy
 
 

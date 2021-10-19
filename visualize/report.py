@@ -1,6 +1,9 @@
-'''
+"""
 viewprobe creates visualizations for a certain eval.
-'''
+
+Reference: https://github.com/CSAILVision/NetDissect-Lite/blob/master/visualize/report.py
+
+"""
 
 import re
 import numpy
@@ -14,7 +17,7 @@ import numpy as np
 # unit,category,label,score
 
 replacements = [(re.compile(r[0]), r[1]) for r in [
-    (r'-[sc]', ''),
+    (r'-[sc]$', ''),
     (r'-[sc] ', ' '),
     (r'-[sc]\)', ')'),
     (r'_', ' '),

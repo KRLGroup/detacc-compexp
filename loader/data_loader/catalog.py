@@ -1,5 +1,6 @@
 """
 Functions for returning masks
+Reference: https://github.com/jayelm/compexp/blob/master/vision/loader/data_loader/catalog.py
 """
 
 import numpy as np

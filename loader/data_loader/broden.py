@@ -1,3 +1,7 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/loader/data_loader/broden.py
+"""
+
 from functools import partial
 import numpy
 import os

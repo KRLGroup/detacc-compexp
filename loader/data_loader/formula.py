@@ -1,3 +1,7 @@
+"""
+https://github.com/jayelm/compexp/blob/master/vision/loader/data_loader/formula.py
+"""
+
 import random
 import pyparsing as pp
 import pyeda.boolalg.expr

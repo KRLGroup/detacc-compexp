@@ -1,3 +1,10 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/dissection/neuron.py
+
+Modified functions: get_uhits, _tally, compute_best_iou
+New function: compute_detacc
+"""
+
 import os
 from PIL import Image
 import numpy as np
@@ -398,7 +405,6 @@ class NeuronOperator:
             n_masks_np = n_masks_np.reshape(g["data_mask_shape"])
             img_has_n_lab = np.any(n_masks_np, axis=(1,2))
             g["tally_labels_img"][-lab] = sum(img_has_n_lab)
-            
 
             if g["tally_labels"][lab] > 0:
                 count += 1 
@@ -581,7 +587,7 @@ class NeuronOperator:
         # Best netdissect explanation
         netdissect = Counter(formulas).most_common(1)[0]
         
-        detacc = NeuronOperator.compexpl_detectacc(
+        detacc = NeuronOperator.compute_detacc(
             netdissect[0], gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape
         )
         best_detacc_expl = copy.deepcopy(netdissect)
@@ -613,7 +619,7 @@ class NeuronOperator:
             formulas = dict(Counter(formulas).most_common(settings.BEAM_SIZE))
 
             current_comp_expl = Counter(formulas).most_common(1)[0]
-            current_detacc = NeuronOperator.compexpl_detectacc(
+            current_detacc = NeuronOperator.compute_detacc(
                 current_comp_expl[0], gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape
             )
 
@@ -643,7 +649,7 @@ class NeuronOperator:
         return iou
     
     @staticmethod
-    def compexpl_detectacc(formula, gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape, no_singles=True):
+    def compute_detacc(formula, gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape, no_singles=True):
         if isinstance(formula, F.Leaf):
             val = formula.val
             masks = gmasks[val]

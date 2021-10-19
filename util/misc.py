@@ -1,5 +1,7 @@
 """
 misc utils
+
+Reference: https://github.com/jayelm/compexp/blob/master/vision/util/misc.py
 """
 
 

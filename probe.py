@@ -1,8 +1,12 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/probe.py
+
+"""
+
 import settings 
 from loader.model_loader import loadmodel 
 from dissection.neuron import hook_feature, NeuronOperator
 from visualize.report import generate_html_summary
-from util.clean import clean
 from util.misc import safe_layername
 import os
 import pandas as pd
@@ -90,5 +94,3 @@ if __name__ == "__main__":
             maxfeature=maxfeature[-1], features=features[-1],
     )
 
-    if settings.CLEAN:
-        clean()

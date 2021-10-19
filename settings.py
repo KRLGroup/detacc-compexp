@@ -1,12 +1,13 @@
 """
 Configurable settings for probing
+
+Reference: https://github.com/jayelm/compexp/blob/master/vision/settings.py
 """
 
 GPU = True  # running on GPU is highly suggested
 # INDEX_FILE = "index_sm_2494.csv"  # Which index file to use? If _sm, use test mode
 INDEX_FILE = "index_ade20k.csv"  # Which index file to use? If _sm, use test mode
 
-CLEAN = False  # set to "True" if you want to clean the temporary large files after generating result
 MODEL_URLS = { # these are the download URLs for downloading the models to probe
     "resnet18": "http://places2.csail.mit.edu/models_places365/resnet18_places365.pth.tar",
     "resnet50": "http://places2.csail.mit.edu/models_places365/resnet50_places365.pth.tar",
@@ -21,9 +22,8 @@ MODEL_DATA_PERCENT = None  # model data percent (e.g. for places365). None if no
 PROBE_DATASET = "broden"  # currently only broden dataset is supported
 QUANTILE = 0.005  # the threshold used for activation
 TOTAL_QUANTILE = 0.01  # the threshold used for whole-image activation
-SEG_THRESHOLD = 0.04  # the threshold used for visualization
-SCORE_THRESHOLD = 0.04  # the threshold used for IoU score (in HTML file)
-CONTRIBUTIONS = False #True  # If True, assume successive layers feed into each other; will use weights of layer i+1 to identify neurons contributing to layer i
+# SEG_THRESHOLD = 0.04  # the threshold used for visualization
+# SCORE_THRESHOLD = 0.04  # the threshold used for IoU score (in HTML file)
 TOPN = 5  # to show top N image with highest activation for each unit
 PARALLEL = (
     8  # how many process is used for tallying

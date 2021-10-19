@@ -1,3 +1,7 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/loader/model_loader.py
+"""
+
 import settings
 import torch
 import torchvision

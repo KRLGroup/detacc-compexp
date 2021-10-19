@@ -1,5 +1,8 @@
 """
 ade20k dataloaders
+
+Reference: https://github.com/jayelm/compexp/blob/master/vision/loader/data_loader/ade20k.py
+
 """
 
 import os

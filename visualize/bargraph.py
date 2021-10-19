@@ -1,3 +1,9 @@
+"""
+Reference: https://github.com/jayelm/compexp/blob/master/vision/visualize/bargraph.py
+Modified functions: bar_graph_svg
+
+"""
+
 import re
 import itertools
 import operator
