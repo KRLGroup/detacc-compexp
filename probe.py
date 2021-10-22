@@ -19,7 +19,7 @@ import urllib.request as req
 # Our code
 def handle_model_download():
     """
-    checks if model to probe are present in their folder, and downloads them if they're not
+    checks if the models to probe are present in their folder, and downloads them if they're not
     """
     if not os.path.exists(settings.MODEL_FILE):
         

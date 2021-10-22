@@ -55,7 +55,7 @@ def get_accuracy_list(preds, img_idxs, data):
         data: object of SegmentationData class located in 'loader/data_loader/broden'
     
     Returns:
-        acc_list: list containing the truth of model predictions for each img in the subset provided
+        acc_list: list containing the truth value of model predictions for each img in the subset provided, ie., for each img in the subset, true is recorded if the prediction is correct and false otherwise
     """
     acc_list = []
     u_preds = preds[img_idxs]
@@ -70,7 +70,7 @@ def get_accuracy_list(preds, img_idxs, data):
 
 def compute(records, mc, preds, allacts, feats, threshs):
     """
-    computes the correlation of 
+    computes the correlation of the evaluation scores (IoU and Detection Accuracy), and writes the output to file 'correlation_scores.csv' in the folder set in settings.OUTPUT_FOLDER
     Args:
         records: (list) list of dictionaries, each containing the explanations and scores for a unit
         mc: object of the MaskCatalog class located in 'loader/data_loader/catalog'

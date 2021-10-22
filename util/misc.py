@@ -1,7 +1,7 @@
 """
 misc utils
 
-Reference: https://github.com/jayelm/compexp/blob/master/vision/util/misc.py
+Reference for the function 'safe_layername': https://github.com/jayelm/compexp/blob/master/vision/util/misc.py
 
 New functions: upsample, get_unit_acts
 """
