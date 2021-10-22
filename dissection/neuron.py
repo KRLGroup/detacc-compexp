@@ -302,18 +302,19 @@ class NeuronOperator:
 
         # Create full array
         uhitidx = np.zeros((data_size, *mask_shape), dtype=np.bool)
-        uhitidx_img = np.zeros((data_size,), dtype=np.bool)
+        uhitidx_img = np.zeros((data_size,), dtype=np.bool) # Our code: data structure for marking imgs true where unit has any activation at all
 
         # Get indices where threshold is exceeded
         uhit_subset = ufeat > uthresh
         uhits = uhit_subset.sum()
 
-        uhit_subset_img = np.any(uhit_subset, axis=(1,2))
-        uhits_img = uhit_subset_img.sum()
+        # Our code
+        uhit_subset_img = np.any(uhit_subset, axis=(1,2)) # marking imgs true where unit has any activation at all
+        uhits_img = uhit_subset_img.sum() # computing total number of imgs in dataset where unit has any activation at all
 
         if uhits > 0:
             uhitidx[uidx] = uhit_subset
-            uhitidx_img[uidx] = uhit_subset_img
+            uhitidx_img[uidx] = uhit_subset_img # Our code: setting value for specific imgs where unit has any activation at all
 
         # Save as compressed
         uhitidx_flat = uhitidx.reshape(
@@ -342,8 +343,6 @@ class NeuronOperator:
         cat_namer = lambda name: 'NONE' if name is None else categories[pcats[name]]
 
         categories = data.category_names()
-        pcpi = data.primary_categories_per_index()
-        g["pcpi"] = pcpi
         pcats = data.primary_categories_per_index()
         
         if settings.UNIT_RANGE is not None:
@@ -366,28 +365,27 @@ class NeuronOperator:
         # Cache all masks so they can be looked up
         mc = MaskCatalog(pf)
 
-        # Setting mc, labels, masks, img2cat, mask_shape, data_mask_shape for g
+        # Setting mc, labels, masks, mask_shape, data_mask_shape for g
         g["mc"] = mc
         g["labels"] = mc.labels
         g["masks"] = mc.masks
-        g["img2cat"] = mc.img2cat
         g["mask_shape"] = mc.mask_shape
         g["data_mask_shape"] = (features.shape[0], *mc.mask_shape)
 
         # Cache label tallies
         # TALLY_LABELS: number of times a label hits across the dataset
         g["tally_labels"] = {}
-        g["tally_labels_img"] = {}
+        g["tally_labels_img"] = {} # Our code: data structure for storing the counts of imgs where concept appears in the dataset
         
         # COUNTING FEATURES
         count = 0
         for lab in tqdm(mc.labels, desc="Tally labels"):
-            masks = g["masks"][lab] #masks = mc.get_mask(F.Leaf(lab))
-
+            masks = g["masks"][lab]
+            
+            # Our code
             masks_np = cmask.decode(masks)
             masks_np = masks_np.reshape(g["data_mask_shape"])
             img_has_lab = np.any(masks_np, axis=(1,2))
-
             # Counting all images that have this concept in them
             label_occurence = np.einsum('i->', img_has_lab, dtype=int)
             
@@ -395,9 +393,9 @@ class NeuronOperator:
             if label_occurence < settings.CONCEPT_MIN_OCCURENCE:
                 continue
 
-            g["tally_labels_img"][lab] = label_occurence
             g["tally_labels"][lab] = cmask.area(masks)
-
+            g["tally_labels_img"][lab] = label_occurence
+            
             # Catering to 'NOT' labels
             n_masks = mc.get_mask(F.Not(F.Leaf(lab)))
             g["masks"][-lab] = n_masks
@@ -405,9 +403,11 @@ class NeuronOperator:
             n_masks_np = n_masks_np.reshape(g["data_mask_shape"])
             img_has_n_lab = np.any(n_masks_np, axis=(1,2))
             g["tally_labels_img"][-lab] = sum(img_has_n_lab)
+            # Our code
+
 
             if g["tally_labels"][lab] > 0:
-                count += 1 
+                count += 1
         
         mc.labels = g["tally_labels"].keys()
         print(f"# nonzero concepts: {count}")
@@ -415,7 +415,7 @@ class NeuronOperator:
         tally_units = {u: 0 for u in units_}
         
         g["tally_units"] = tally_units
-        g["tally_units_img"] = {u:0 for u in units_}
+        g["tally_units_img"] = {u:0 for u in units_} # Our code: data structure for recording for each unit the total number of imgs it activates on
 
         # Get unit information (this is expensive (upsampling) and where most of the work is done)
         g["features"] = features
@@ -432,16 +432,14 @@ class NeuronOperator:
             for u in units_
         )
 
-        all_uidx = {u: None for u in units_}
         all_uhitidx = {u: None for u in units_}
         
         # POS_LABELS: for each unit, maps to which feature labels are positive
         # at least once when the unit fires (used to speed up beam search)
         pos_labels = {u: None for u in units_}
         g["pos_labels"] = pos_labels
-        g["all_uidx"] = all_uidx
         g["all_uhitidx"] = all_uhitidx
-        g["all_uhitidx_img"] = {u: None for u in units_}
+        g["all_uhitidx_img"] = {u: None for u in units_} # Our code: data structure for marking imgs true where unit has any activation at all, for each unit
 
         with mp.Pool(settings.PARALLEL) as p, tqdm(
             total=units, desc="Tallying units"
@@ -449,9 +447,8 @@ class NeuronOperator:
             for (u, uidx, uhitidx, uhits, uhitidx_img, uhits_img) in p.imap_unordered(
                 NeuronOperator.get_uhits, mp_args
             ):
-                all_uidx[u] = uidx
                 all_uhitidx[u] = uhitidx
-                g["all_uhitidx_img"][u] = uhitidx_img
+                g["all_uhitidx_img"][u] = uhitidx_img # Our code: recording for each unit, boolean values for whether or not it activaes for imgs in the dataset
                 # Get all labels which have at least one true here
                 label_hits = mc.img2label[uidx].sum(0)
                 # pos_labels[u] = np.argwhere(label_hits > 0).squeeze(1)
@@ -459,7 +456,7 @@ class NeuronOperator:
                 pos_labels[u] = np.array([l for l in pos_labs if l in g["tally_labels"]])
 
                 tally_units[u] = uhits
-                g["tally_units_img"][u] = uhits_img
+                g["tally_units_img"][u] = uhits_img # Our code: recording for each unit the total number of imgs it activates on
                 pbar.update()
 
         # We don't need features anymore
@@ -473,13 +470,10 @@ class NeuronOperator:
         else:
             ranger = settings.UNIT_RANGE
             nu = len(settings.UNIT_RANGE)
-        
-        wholeacts = features > threshold[np.newaxis, :, np.newaxis, np.newaxis]
-        wholeacts = wholeacts.any((2, 3))
 
         mp_args = (
             (
-                u, g["pos_labels"][u], g["masks"], g["all_uidx"][u], g["all_uhitidx"][u], 
+                u, g["pos_labels"][u], g["masks"], g["all_uhitidx"][u], 
                 g["tally_units"][u], g["tally_units_img"][u], g["tally_labels"], 
                 g["tally_labels_img"], g["labels"], data, g["data_mask_shape"]#, beam[u], curr_form_len
             )
@@ -489,21 +483,22 @@ class NeuronOperator:
         with mp.Pool(settings.PARALLEL) as p, tqdm(
             total=nu, desc="IoU - primitives"
         ) as pbar:
-            # for (u, best, best_noncomp, formulas) in p.imap_unordered(
             for (u, best_detacc_expl, netdissect, comp_expl) in p.imap_unordered(
                 NeuronOperator.compute_best_iou, mp_args
             ):
+                # Our code: extracting the detection accuracy explanations, compositional explanations, and netdissect explanations and their properties
+                detacc_expl_lab, best_detacc_expl_iou, best_detacc_expl_detacc = best_detacc_expl
                 comp_expl_lab, comp_expl_iou, comp_expl_detacc = comp_expl
                 netdissect_lab, netdissect_iou, netdissect_detacc = netdissect
-                detacc_expl_lab, best_detacc_expl_iou, best_detacc_expl_detacc = best_detacc_expl
-
+                
+                detacc_expl_name = detacc_expl_lab.to_str(namer)
+                detacc_expl_cat = detacc_expl_lab.to_str(cat_namer)
                 comp_expl_name = comp_expl_lab.to_str(namer)
                 comp_expl_cat = comp_expl_lab.to_str(cat_namer)
                 netdissect_name = netdissect_lab.to_str(namer)
                 netdissect_cat = netdissect_lab.to_str(cat_namer)
-                detacc_expl_name = detacc_expl_lab.to_str(namer)
-                detacc_expl_cat = detacc_expl_lab.to_str(cat_namer)
 
+                # saving the records for storing in a csv file
                 r = {
                     "unit": u,
                     "category": detacc_expl_cat,
@@ -546,12 +541,11 @@ class NeuronOperator:
 
             :param args: tuple whose elements are the required parameters for the function
 
-            :returns: (unit_number: int, (best_formula: F.F, best_iou: float),
-                (best_noncomp_formula: F.F), (best_noncomp_iou: float))
-                where noncomp indicates primitive formulas
+            :returns: (unit_number: int, (best_expl: F.F, iou: float, detacc: float),
+                (best_fixed_len_comp_expl: F.F, iou: float, detacc: float), (best_detacc_expl: F.F, iou: float, detacc: float)
         """
         (
-            u, upos_labels, gmasks, uall_uidx, uall_uhitidx, 
+            u, upos_labels, gmasks, uall_uhitidx, 
             utally_units, utally_units_img, gtally_labels, 
             gtally_labels_img, glabels, data, data_mask_shape
         ) = args
@@ -562,14 +556,14 @@ class NeuronOperator:
         for lab in upos_labels:
             masks = gmasks[lab]
             lab_iou = NeuronOperator.compute_iou(
-                uall_uidx, uall_uhitidx, masks,
+                uall_uhitidx, masks,
                 utally_units, gtally_labels[lab],
             )
             ious[lab] = lab_iou
 
         nonzero_iou = Counter({lab: iou for lab, iou in ious.items() if iou > 0})
         if not nonzero_iou:  # Nothing found
-            return u, (F.Leaf(None), 0.0, 0.0, []), (F.Leaf(None), 0.0, 0.0), (F.Leaf(None), 0.0, 0.0), {}
+            return u, (F.Leaf(None), 0.0, 0.0), (F.Leaf(None), 0.0, 0.0), (F.Leaf(None), 0.0, 0.0)
 
         # Define candidates for beam search 
         if settings.BEAM_SEARCH_LIMIT is not None:
@@ -587,29 +581,33 @@ class NeuronOperator:
         # Best netdissect explanation
         netdissect = Counter(formulas).most_common(1)[0]
         
+        # Our code: we modified the whole logic here
+        # get the detection accuracy for the best netdissect explanation
         detacc = NeuronOperator.compute_detacc(
             netdissect[0], gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape
         )
-        best_detacc_expl = copy.deepcopy(netdissect)
-        netdissect = (*netdissect, detacc)
+        best_detacc_expl = copy.deepcopy(netdissect) # initializing best explanation
+        netdissect = (*netdissect, detacc) # (expl, iou, detacc)
         
         i, best_detacc, detacc_flag, comp_expl = 0, detacc, True, None
 
         # ==== BEAM SEARCH ====
-        while i < settings.COMP_MAX_FORMULA_LENGTH - 1 or detacc_flag:
+        while i < settings.COMP_MAX_FORMULA_LENGTH - 1 or detacc_flag: 
+            # this same block takes care of generating both the fixed length compositional explanation and the detection accuracy explanation
+            # the search runs until both the fixed length is reached, and detacc_flag is set to False, ie. detection accuracy explanation has been found
             new_formulas = {}
-            for formula in formulas:
-                for label in bs_labs:
+            for formula in formulas: # take each formula...
+                for label in bs_labs: # ...combine it with all the concepts one after the other to make the next length formula
                     for op, negate in [(F.Or, False), (F.And, False), (F.And, True)]:
                         new_term = F.Leaf(label)
                         if negate:
                             new_term = F.Not(new_term)
-                        new_term = op(formula, new_term)
+                        new_term = op(formula, new_term) # new explanation
                         masks_comp = get_mask_global(gmasks, new_term)
                         comp_tally_label = cmask.area(masks_comp)
                         
                         comp_iou = NeuronOperator.compute_iou(
-                            uall_uidx, uall_uhitidx, masks_comp, utally_units, comp_tally_label,
+                            uall_uhitidx, masks_comp, utally_units, comp_tally_label,
                         )
 
                         new_formulas[new_term] = comp_iou
@@ -618,30 +616,33 @@ class NeuronOperator:
             # Trim the beam
             formulas = dict(Counter(formulas).most_common(settings.BEAM_SIZE))
 
-            current_comp_expl = Counter(formulas).most_common(1)[0]
-            current_detacc = NeuronOperator.compute_detacc(
+            current_comp_expl = Counter(formulas).most_common(1)[0] # best fixed len comp expl at the current length
+            current_detacc = NeuronOperator.compute_detacc( # compute the detection accuracy for this best explanation
                 current_comp_expl[0], gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape
             )
 
+            # catering to fixed len comp explanations; 
+            # if the length is within the fixed setting, keep the information and increment length
             if i < settings.COMP_MAX_FORMULA_LENGTH - 1:
                 comp_expl = copy.deepcopy(current_comp_expl)
                 comp_detacc = copy.copy(current_detacc)
                 i += 1
             
-            # Permitting expl. with improved detacc or the same, as long as it's not just stancking up NOT
+            # Permitting expl. with improved detacc or the same, as long as it's not just stancking up 'NOT'
             if current_detacc > best_detacc or (current_detacc == best_detacc and "(NOT " not in current_comp_expl[0].to_str(namer)):
                 best_detacc = current_detacc
                 best_detacc_expl = copy.deepcopy(current_comp_expl)
             else:
-                detacc_flag = False
+                detacc_flag = False # end of search for detection accuracy explanation
 
+        # put results together
         comp_expl = (*comp_expl, comp_detacc)
         best_detacc_expl = (*best_detacc_expl, best_detacc)
 
         return u, best_detacc_expl, netdissect, comp_expl
 
     @staticmethod
-    def compute_iou(uidx, uhitidx, masks, tally_unit, tally_label):
+    def compute_iou(uhitidx, masks, tally_unit, tally_label):
         # Compute intersections
         tally_both = cmask.area(cmask.merge((masks, uhitidx), intersect=True))
         iou = (tally_both) / (tally_label + tally_unit - tally_both + 1e-10)
@@ -650,7 +651,24 @@ class NeuronOperator:
     
     @staticmethod
     def compute_detacc(formula, gmasks, uall_uhitidx, gtally_labels_img, data_mask_shape, no_singles=True):
+        """ computes the detection accuracy of a given explanation formula
+
+        Args:
+            formula (object of Leaf, Or, or And classes defined in 'loader/data_loader/formula.py'): the explanation to be evaluated
+            gmasks: (dict): dictionary of concept labels to their corresponding masks over the dataset encoded in MSCOCO format
+            uall_uhitidx: (dict) dictionary of units to their corresponding masks over the dataset encoded in MSCOCO format
+            gtally_labels_img: (dict) dictionary of concept labels to the corresponding image-wise counts of their occurence in the dataset
+            data_mask_shape: (tuple) shape of masks
+            no_singles: (bool) set to False to also return the detection accuracies for each concept in a non-atomic explanation formula in addition to the detection accuracy of the formula as a whole
+
+        Returns:
+            detacc: (float) the detection accuracy of the explanation formula by the unit over the dataset
+            single_accs: (list) list of detection accuracies for each concept in a non-atomic explanation formula, conditionally returned by seting 'no_singles' to False
+        """
+        
+        # this block computes the detection accuracy of the unit on the explanation as a whole
         if isinstance(formula, F.Leaf):
+            # for atomic concept explanations, their mask and tally count can be fetched from pre-computations to save execution time
             val = formula.val
             masks = gmasks[val]
             tally_lbl_img = gtally_labels_img[val]
@@ -661,16 +679,18 @@ class NeuronOperator:
             tally_lbl_img = np.einsum('i->', np.any(masks_np, axis=(1,2)), dtype=int)
 
         if tally_lbl_img > 0.0:
+            # only fetch the overlap of the unit activations and the explanation map if the explanation exists at all in the dataset, i.e., tally_lbl_img > 0.0
             overlap = cmask.decode(cmask.merge((masks, uall_uhitidx), intersect=True))
             overlap = overlap.reshape(data_mask_shape)
             overlap = np.einsum('i->', np.any(overlap, axis=(1,2)), dtype=int)
             detacc = round(overlap/tally_lbl_img, 4)
         else:
-            overlap, detacc = 0.0, 0.0
+            detacc = 0.0
 
         if no_singles:
             return detacc
         
+        # this block computes the detection accuracy of the unit on each of the concept in the explanation
         if isinstance(formula, F.Leaf):
             single_accs = [detacc]
         else:

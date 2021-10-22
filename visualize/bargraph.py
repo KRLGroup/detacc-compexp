@@ -55,14 +55,12 @@ def bar_graph_svg(
     label_cats = {}
     label_score = {}
     for record in tally_result:
-        # if float(record["detacc"]) < threshold:
-        #     continue
         label = record["label"]
         if label not in label_cats:
             label_cats[label] = []
         label_cats[label].append(record["category"])
         if label not in label_score or label_score[label] < float(record["detacc"]):
-            label_score[label] = float(record["detacc"])
+            label_score[label] = float(record["detacc"]) # Our code: we made detection accuracy the main score
     # Count each label, and note its category
     label_counts = {}
     for label, cats in label_cats.items():
@@ -104,7 +102,7 @@ def bar_graph_svg(
                         category_order.index(label_cats[record["label"]]),
                         -label_counts[record["label"]],
                         -label_score[record["label"]],
-                        -float(record["detacc"]),
+                        -float(record["detacc"]), # Our code: we included detection accuracy in the sorting criteria
                     )
                 ),
             )

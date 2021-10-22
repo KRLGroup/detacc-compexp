@@ -3,6 +3,9 @@ viewprobe creates visualizations for a certain eval.
 
 Reference: https://github.com/CSAILVision/NetDissect-Lite/blob/master/visualize/report.py
 
+Modified function: generate_html_summary
+New functions: get_top_imgs_idx, break_expl, breakup_tally_result
+
 """
 
 import re
@@ -14,6 +17,7 @@ import visualize.expdir as expdir
 import visualize.bargraph as bargraph
 import settings
 import numpy as np
+from util import misc
 # unit,category,label,score
 
 replacements = [(re.compile(r[0]), r[1]) for r in [
@@ -29,27 +33,18 @@ def fix(s):
     return s
 
 
-def upsample(features, shape):
-    return np.array(Image.fromarray(features).resize(shape, resample=Image.BILINEAR))
-
-def get_unit_acts(ufeat, uthresh, mask_shape, data_size):
-    """
-    Returns the activation of units
-    """
-    uidx = np.argwhere(ufeat.max((1, 2)) > uthresh).squeeze(1)
-    ufeat = np.array([upsample(ufeat[i], mask_shape) for i in uidx])
-
-    # Create full array
-    uhitidx = np.zeros((data_size, *mask_shape), dtype=np.bool)
-
-    # Change mask to bool based on threshold
-    uhit_subset = ufeat > uthresh    
-    uhitidx[uidx] = uhit_subset
-
-    return uhitidx
-
 def get_top_imgs_idx(ufeat, uthresh, mask_shape, data_size):
-    uall_uhitidx = get_unit_acts(
+    """
+    fetches unit's top activates imgs and returns the their sorted indices by most activated first
+    Args:
+        ufeat: (ndarray) features of a single unit over the dataset
+        uthresh: (float) the activation threshold for this unit
+        mask_shape: (tuple) new dimension to upsample each image to
+        data_size: (int) number of images in dataset
+    Returns:
+        act_idxs: (ndarray - 1D) indices of activated imgs, sorted by most activated first
+    """
+    uall_uhitidx = misc.get_unit_acts(
         ufeat, uthresh, mask_shape, data_size
     )
 
@@ -59,6 +54,13 @@ def get_top_imgs_idx(ufeat, uthresh, mask_shape, data_size):
     return act_idxs
 
 def break_expl(expl):
+    """
+    takes a string of compositional explanation of any length and breaks it up to a list of concept
+    Args:
+        expl: (string) a compositional explanation of any length
+    Returns:
+        expl: (list) a list of corresponding concepts in the explanation
+    """
     expl = re.sub("\(|\)", "", expl)
     expl = re.sub(r" AND NOT ", r" AND_NOT ", expl)
     # expl = re.sub(r"([A-Z]{3}) ", r"\1__", expl)
@@ -69,6 +71,13 @@ def break_expl(expl):
     return expl
 
 def breakup_tally_result(tally_result):
+    """
+    converts a list of compositional explanations to atomic concept explanations while maintaining the link to the unit and properties
+    Args:
+        tally_result: (list) list of dictionaries holding unit (compositional) explanations
+    Returns:
+        tally_result: (list) list of dictionaries holding the broken down atomic concepts corresponding to the input explanations
+    """
     new_tally_result = []
     for record in tally_result:
         cats = break_expl(record["category"])
@@ -85,6 +94,9 @@ def breakup_tally_result(tally_result):
     return new_tally_result
 
 
+
+
+
 def generate_html_summary(ds, layer, mask_shape, maxfeature=None, features=None, thresholds=None,
         imsize=None, imscale=72, tally_result=None,
         gridwidth=None, gap=3, limit=None, force=True, verbose=False):
@@ -96,7 +108,6 @@ def generate_html_summary(ds, layer, mask_shape, maxfeature=None, features=None,
     if imsize is None:
         imsize = settings.IMG_SIZE
 
-    # top = np.argsort(maxfeature, 0)[:-1 - settings.TOPN:-1, :].transpose()
     
     ed.ensure_dir('html','image')
     html = [html_prefix]
@@ -138,9 +149,13 @@ def generate_html_summary(ds, layer, mask_shape, maxfeature=None, features=None,
     html.append('<div class="unitgrid"') # Leave off > to eat spaces
     if limit is not None:
         tally_result = tally_result[:limit]
+    
+    # Our code
+    # indexing sorting order for detection accuracy
     for i, record in enumerate(sorted(tally_result, key=lambda record: -float(record['detacc']))):
         record['score-order'] = i
     
+    ## Our code: indexing sorting order for detection accuracy
     for i, record in enumerate(sorted(tally_result, key=lambda record: -float(record['iou']))):
         record['iou-order'] = i
     
@@ -162,8 +177,9 @@ def generate_html_summary(ds, layer, mask_shape, maxfeature=None, features=None,
                 ((imsize + gap) * gridheight - gap,
                  (imsize + gap) * gridwidth - gap, 3), 255, dtype='uint8')
             
-            # for x, index in enumerate(top[unit]):
+            # Our code: getting top activated imgs
             img_idx = get_top_imgs_idx(features[:,unit], thresholds[unit], mask_shape, features.shape[0])
+            # for x, index in enumerate(top[unit]):
             
             for x in range(settings.TOPN):
                 index = img_idx[x]
@@ -180,6 +196,7 @@ def generate_html_summary(ds, layer, mask_shape, maxfeature=None, features=None,
                       col*(imsize+gap):col*(imsize+gap)+imsize,:] = vis
             imsave(ed.filename('html/' + imfn), tiled)
         # Generate the wrapper HTML
+        # We added restyled the html output
         # graytext = ' lowscore' if float(record['detacc']) < settings.SCORE_THRESHOLD else ''
         graytext = ''
         html.append('><div class="unit%s" data-order="%d %d %d %d">' %

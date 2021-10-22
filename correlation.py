@@ -8,28 +8,22 @@ from tqdm import tqdm
 # from evaluation import utils
 from pycocotools import mask as cmask
 from PIL import Image
+from util import misc
 
-
-def upsample(features, shape):
-    return np.array(Image.fromarray(features).resize(shape, resample=Image.BILINEAR))
-
-def get_unit_acts(ufeat, uthresh, mask_shape, data_size):
-    """
-    Returns the activation of units
-    """
-    uidx = np.argwhere(ufeat.max((1, 2)) > uthresh).squeeze(1)
-    ufeat = np.array([upsample(ufeat[i], mask_shape) for i in uidx])
-
-    # Create full array
-    uhitidx = np.zeros((data_size, *mask_shape), dtype=np.bool)
-
-    # Change mask to bool based on threshold
-    uhit_subset = ufeat > uthresh    
-    uhitidx[uidx] = uhit_subset
-
-    return uhitidx
 
 def get_formula_unit_img_idx(masks, ufeat, uthresh, data_mask_shape, u_img_acts, comb_type="and"):
+    """
+    Fetches indexes of imgs in dataset where unit fires and/or explanation exists based on 'comb_type'
+    Args:
+        masks: (MSCOCO data) the mask of the explanation under consideration over the dataset
+        ufeat: (ndarray) features of the unit over the dataset
+        uthresh: (float) the activation threshold for this unit
+        data_mask_shape: (tuple) new dimension to upsample the features to
+        u_img_acts: (ndarray - 1D) precomputed idexes of imgs where unit fired beyond threshold
+        comb_type: (string) value indicating how to combine unit activations and explanation presence on imgs. Values are 'and' | 'or'
+    Returns:
+        formula_imgs: (ndarray - 1D) linear array of indexes of imgs where unit activates and/or explanation is present
+    """
     masks_np = cmask.decode(masks)
     if len(masks_np.shape) == 2:
         masks_np = masks_np.reshape(data_mask_shape)
@@ -39,7 +33,7 @@ def get_formula_unit_img_idx(masks, ufeat, uthresh, data_mask_shape, u_img_acts,
     formula_imgs = np.any(masks_np, axis=(1,2))
     
     if comb_type=="and":
-        uall_uhitidx = get_unit_acts(
+        uall_uhitidx = misc.get_unit_acts(
             ufeat, uthresh, (data_mask_shape[1], data_mask_shape[2]), data_mask_shape[0]
         )
         overlap = np.logical_and(masks_np, uall_uhitidx)
@@ -53,6 +47,16 @@ def get_formula_unit_img_idx(masks, ufeat, uthresh, data_mask_shape, u_img_acts,
 
 
 def get_accuracy_list(preds, img_idxs, data):
+    """
+    given an image set and the corresponding model predictions, computes an accuracy list
+    Args:
+        preds: list of all model predictions over dataset
+        img_idxs: a list of subset of img indexes
+        data: object of SegmentationData class located in 'loader/data_loader/broden'
+    
+    Returns:
+        acc_list: list containing the truth of model predictions for each img in the subset provided
+    """
     acc_list = []
     u_preds = preds[img_idxs]
     for i, (p, t) in enumerate(u_preds):
@@ -65,6 +69,19 @@ def get_accuracy_list(preds, img_idxs, data):
 
 
 def compute(records, mc, preds, allacts, feats, threshs):
+    """
+    computes the correlation of 
+    Args:
+        records: (list) list of dictionaries, each containing the explanations and scores for a unit
+        mc: object of the MaskCatalog class located in 'loader/data_loader/catalog'
+        preds: list of all model predictions over dataset
+        allacts: (ndarray - 1D) array of boolean values over all over dataset, true for imgs on which unit activates beyond the threshold
+        feats: (ndarray - 4D) array of all features of a layer of the model, for all units and over all imgs
+        threshs: (ndarray - 1D) array of threshold values for each unit of the model
+
+    Returns:
+        None
+    """
     data = SegmentationData(settings.DATA_DIRECTORY, categories=settings.CATEGORIES)
     data_mask_shape = (data.size(), *mc.mask_shape)
     

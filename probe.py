@@ -12,11 +12,15 @@ import os
 import pandas as pd
 from loader.data_loader import ade20k
 import numpy as np
-
 import correlation
-
 import urllib.request as req
+
+
+# Our code
 def handle_model_download():
+    """
+    checks if model to probe are present in their folder, and downloads them if they're not
+    """
     if not os.path.exists(settings.MODEL_FILE):
         
         print(f"Model {settings.MODEL} not found. Downloading it...")
@@ -84,11 +88,13 @@ if __name__ == "__main__":
         features[-1], thresholds[-1], savepath=tally_dfname
     )
     
+    # Our code
+    # ==== STEP 4: Compute correlation scores ====
     correlation.compute(
         tally_result, mc, preds, wholeacts, features[-1], thresholds[-1]
     )
 
-    # ==== STEP 4: generating results ====
+    # ==== STEP 5: Generating results ====
     generate_html_summary(fo.data, layernames[-1], mc.mask_shape,
             tally_result=tally_result, thresholds=thresholds[-1],
             maxfeature=maxfeature[-1], features=features[-1],
