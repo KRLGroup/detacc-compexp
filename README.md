@@ -1,6 +1,6 @@
 # Detection Accuracy for Evaluating Compositional Explanations of Units
 
-Official repository of the paper "Detection Accuracy for Evaluating Compositional Explanations of Units. *Sayo M. Makinwa, Biagio La Rosa, and Roberto Capobianco1.*". Find paper at: https://arxiv.org/abs/2109.07804.
+Official repository of the paper "Detection Accuracy for Evaluating Compositional Explanations of Units. *Sayo M. Makinwa, Biagio La Rosa, and Roberto Capobianco.*". Find paper at: https://arxiv.org/abs/2109.07804.
 
 The repository contains the the code to replicate paper results.
 
