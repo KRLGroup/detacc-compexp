@@ -1,6 +1,6 @@
 # Detection Accuracy for Evaluating Compositional Explanations of Units
 
-Official repository of the paper "Detection Accuracy for Evaluating Compositional Explanations of Units. *Sayo M. Makinwa, Biagio La Rosa, and Roberto Capobianco.*". Find paper at: https://arxiv.org/abs/2109.07804.
+Official repository of the paper "Detection Accuracy for Evaluating Compositional Explanations of Units. *Sayo M. Makinwa, Biagio La Rosa, and Roberto Capobianco.*". Find paper at: https://link.springer.com/chapter/10.1007/978-3-031-08421-8_38 and our pre-print version at: https://arxiv.org/abs/2109.07804.
 
 The repository contains the the code to replicate paper results.
 
@@ -81,11 +81,15 @@ This repo extends the implementation of compositional explanations (vision exper
 ## Citation
 Please cite our paper as:
 ```tex
-@article{Makinwa2021,
-  title={Detection Accuracy for Evaluating Compositional Explanations of Units},
-  author={Sayo M. Makinwa and Biagio La Rosa and Roberto Capobianco},
-  journal={ArXiv},
-  year={2021},
-  volume={abs/2109.07804}
+@InProceedings{Makinwa2021,
+author={Makinwa, Sayo M. and La Rosa, Biagio and Capobianco, Roberto},
+editor={Bandini, Stefania and Gasparini, Francesca and Mascardi, Viviana and Palmonari, Matteo and Vizzari, Giuseppe},
+title={Detection Accuracy for Evaluating Compositional Explanations of Units},
+booktitle={AIxIA 2021 -- Advances in Artificial Intelligence},
+year={2022},
+publisher={Springer International Publishing},
+address={Cham},
+pages={550--563},
+isbn={978-3-031-08421-8},
 }
 ```
